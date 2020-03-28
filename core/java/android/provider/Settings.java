@@ -12167,6 +12167,12 @@ public final class Settings {
          * @hide
          */
         public static final String HIDE_PRIVATESPACE_ENTRY_POINT = "hide_privatespace_entry_point";
+        
+        /**
+         * Face Unlock Method
+         * @hide
+         */
+        public static final String FACE_UNLOCK_METHOD = "face_unlock_method";
 
         /**
          * These entries are considered common between the personal and the managed profile,
