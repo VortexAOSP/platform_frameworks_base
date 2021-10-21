@@ -186,6 +186,13 @@ public interface CentralSurfaces extends Dumpable, LifecycleOwner {
         return contextForUser.getPackageManager();
     }
 
+<<<<<<< HEAD
+=======
+    void toggleCameraFlash();
+
+    void start();
+
+>>>>>>> b9beb4f6f600 (base: Long press power button to toggle torch [1/2])
     boolean updateIsKeyguard();
 
     boolean updateIsKeyguard(boolean forceStateChange);
