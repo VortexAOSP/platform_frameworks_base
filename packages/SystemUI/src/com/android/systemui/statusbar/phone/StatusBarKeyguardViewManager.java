@@ -96,6 +96,7 @@ import com.android.systemui.statusbar.policy.KeyguardStateController;
 import com.android.systemui.unfold.FoldAodAnimationController;
 import com.android.systemui.unfold.SysUIUnfoldComponent;
 import com.android.systemui.user.domain.interactor.SelectedUserInteractor;
+import com.android.systemui.R;
 
 import dagger.Lazy;
 
@@ -170,6 +171,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
             public void onFullyShown() {
                 mPrimaryBouncerAnimating = false;
                 updateStates();
+                showFaceRecognizingMessage();
             }
 
             @Override
@@ -325,6 +327,8 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
 
     @Nullable private TaskbarDelegate mTaskbarDelegate;
     private Handler mHandler;
+    private Handler mFaceRecognizingHandler;
+    private boolean mFaceRecognitionRunning = false;
 
     private final KeyguardUpdateMonitorCallback mUpdateMonitorCallback =
             new KeyguardUpdateMonitorCallback() {
@@ -344,6 +348,20 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
             // the bouncer goes away.
             if (mKeyguardStateController.isOccluded()) {
                 reset(true /* hideBouncerWhenShowing */);
+            }
+        }
+
+        @Override
+        public void onBiometricRunningStateChanged(boolean running,
+                BiometricSourceType biometricSourceType) {
+            if (biometricSourceType == BiometricSourceType.FACE &&
+                    mKeyguardUpdateManager.isUnlockWithFacePossible(mKeyguardUpdateManager.getCurrentUser())){
+                mFaceRecognitionRunning = running;
+                if (!mFaceRecognitionRunning){
+                    mFaceRecognizingHandler.removeCallbacksAndMessages(null);
+                }else{
+                    mFaceRecognizingHandler.postDelayed(() -> showFaceRecognizingMessage(), 100);
+                }
             }
         }
     };
@@ -381,7 +399,8 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
             Lazy<WindowManagerLockscreenVisibilityInteractor> wmLockscreenVisibilityInteractor,
             Lazy<KeyguardDismissActionInteractor> keyguardDismissActionInteractorLazy,
             SelectedUserInteractor selectedUserInteractor,
-            @Main Handler handler
+            @Main Handler handler,
+            @Main Handler faceRecognizingHandler
     ) {
         mContext = context;
         mViewMediatorCallback = callback;
@@ -416,6 +435,7 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
         mKeyguardDismissActionInteractor = keyguardDismissActionInteractorLazy;
         mSelectedUserInteractor = selectedUserInteractor;
         mHandler = handler;
+        mFaceRecognizingHandler = faceRecognizingHandler;
     }
 
     KeyguardTransitionInteractor mKeyguardTransitionInteractor;
@@ -1442,6 +1462,13 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
 
         if (mFlags.isEnabled(Flags.KEYGUARD_WM_STATE_REFACTOR)) {
             mKeyguardTransitionInteractor.startDismissKeyguardTransition();
+        }
+    }
+
+    private void showFaceRecognizingMessage(){
+        if (mFaceRecognitionRunning &&
+                mKeyguardUpdateManager.isUnlockWithFacePossible(mKeyguardUpdateManager.getCurrentUser())) {
+            setKeyguardMessage(mContext.getString(R.string.face_unlock_recognizing), null);
         }
     }
 
