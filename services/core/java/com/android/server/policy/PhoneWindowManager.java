@@ -831,11 +831,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     mDeferredKeyActionExecutor.setActionsExecutable(keyCode, downTime);
                     break;
                 case MSG_DISPATCH_VOLKEY_WITH_WAKE_LOCK:
-                    KeyEvent event = (KeyEvent) msg.obj;
+                    KeyEvent eventVolKey = (KeyEvent) msg.obj;
                     mVolBtnLongPress = true;
-                    dispatchMediaKeyWithWakeLockToAudioService(event);
+                    dispatchMediaKeyWithWakeLockToAudioService(eventVolKey);
                     dispatchMediaKeyWithWakeLockToAudioService(
-                            KeyEvent.changeAction(event, KeyEvent.ACTION_UP));
+                            KeyEvent.changeAction(eventVolKey, KeyEvent.ACTION_UP));
                     break;
             }
         }
