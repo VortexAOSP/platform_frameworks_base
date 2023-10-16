@@ -410,4 +410,5 @@ public interface CentralSurfaces extends Dumpable, LifecycleOwner {
     void startActivity(Intent intent, boolean dismiss);
 
     void startPendingIntentDismissingKeyguard(PendingIntent intent);
+
 }
