@@ -86,7 +86,6 @@ class FaceUnlockImageView @JvmOverloads constructor(
 
     init {
         visibility = View.GONE
-        updateFaceIconState()
     }
 
     public override fun onAttachedToWindow() {
@@ -126,18 +125,8 @@ class FaceUnlockImageView @JvmOverloads constructor(
     fun setState(state: State) {
         if (currentState != state) {
             currentState = state
-            updateFaceIconState()
             handleAnimationForState(state)
         }
-    }
-
-    private fun updateFaceIconState() {
-        setImageResource(when (currentState) {
-            State.SCANNING -> R.drawable.face_scanning
-            State.NOT_VERIFIED -> R.drawable.face_not_verified
-            State.SUCCESS -> R.drawable.face_success
-            State.HIDDEN -> 0
-        })
     }
 
     private fun createScanningAnimation(): ObjectAnimator {
