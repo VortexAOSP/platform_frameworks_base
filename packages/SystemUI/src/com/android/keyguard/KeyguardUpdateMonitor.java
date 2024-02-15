@@ -457,6 +457,8 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
 
     private static int sCurrentUser;
 
+    SettingsObserver mSettingsObserver;
+
     private final boolean mFaceAuthOnlyOnSecurityView;
     public static final int FACE_UNLOCK_BEHAVIOR_DEFAULT = 0;
     public static final int FACE_UNLOCK_BEHAVIOR_SWIPE = 1;
@@ -2407,6 +2409,9 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
                 false, mTimeFormatChangeObserver, UserHandle.USER_ALL);
 
         mFingerprintInteractiveToAuthProvider = interactiveToAuthProvider.orElse(null);
+
+        mSettingsObserver = new SettingsObserver(mHandler);
+        mSettingsObserver.observe();
     }
 
     private void initializeSimState() {
@@ -3841,14 +3846,8 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
         return BIOMETRIC_LOCKOUT_RESET_DELAY_MS;
     }
 
-    @VisibleForTesting
-    protected boolean isFingerprintClass3() {
-        // This assumes that there is at most one fingerprint sensor property
-        return isFingerprintSupported() && isClass3Biometric(mFingerprintSensorProperties.get(0));
-    }
-
-    private boolean isClass3Biometric(SensorPropertiesInternal sensorProperties) {
-        return sensorProperties.sensorStrength == SensorProperties.STRENGTH_STRONG;
+    private void updateSettings() {
+        updateFaceUnlockBehavior();
     }
 
     private void updateFaceUnlockBehavior() {
@@ -3862,10 +3861,50 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
         }
     }
 
+    class SettingsObserver extends ContentObserver {
+        private ContentResolver mContentResolver;
+        SettingsObserver(Handler handler) {
+            super(handler);
+        }
+
+        void observe() {
+            mContentResolver = mContext.getContentResolver();
+            mContentResolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.Secure.FACE_UNLOCK_METHOD), false, this,
+                    UserHandle.USER_ALL);
+            updateSettings();
+        }
+
+        void unobserve(){
+            if (mContentResolver != null){
+                mContentResolver.unregisterContentObserver(this);
+            }
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            updateSettings();
+        }
+    }
+
+    @VisibleForTesting
+    protected boolean isFingerprintClass3() {
+        // This assumes that there is at most one fingerprint sensor property
+        return isFingerprintSupported() && isClass3Biometric(mFingerprintSensorProperties.get(0));
+    }
+
+    private boolean isClass3Biometric(SensorPropertiesInternal sensorProperties) {
+        return sensorProperties.sensorStrength == SensorProperties.STRENGTH_STRONG;
+    }
+
     /**
      * Unregister all listeners.
      */
     public void destroy() {
+        if (mSettingsObserver != null) {
+            mSettingsObserver.unobserve();
+        }
+
         mStatusBarStateController.removeCallback(mStatusBarStateControllerListener);
         mTelephonyListenerManager.removeActiveDataSubscriptionIdListener(mPhoneStateListener);
         mSubscriptionManager.removeOnSubscriptionsChangedListener(mSubscriptionListener);
